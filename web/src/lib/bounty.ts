@@ -7,9 +7,11 @@ export type Bounty = {
   rubric: string;
   reward: bigint;
   deadline: bigint;
+  revealDeadline: bigint;
   judged: boolean;
   finalized: boolean;
   submissionCount: bigint;
+  commitmentCount: bigint;
   winnerIndex: bigint;
   aiReview: `0x${string}`;
 };
@@ -22,8 +24,10 @@ export function parseBounty(
     string,
     bigint,
     bigint,
+    bigint,
     boolean,
     boolean,
+    bigint,
     bigint,
     bigint,
     `0x${string}`,
@@ -35,9 +39,11 @@ export function parseBounty(
     rubric,
     reward,
     deadline,
+    revealDeadline,
     judged,
     finalized,
     submissionCount,
+    commitmentCount,
     winnerIndex,
     aiReview,
   ] = raw;
@@ -47,34 +53,64 @@ export function parseBounty(
     rubric,
     reward,
     deadline,
+    revealDeadline,
     judged,
     finalized,
     submissionCount,
+    commitmentCount,
     winnerIndex,
     aiReview,
   };
 }
 
-export type BountyStatus = "open" | "ready" | "judged" | "finalized";
+/**
+ * Lifecycle phases:
+ * - commit:    before the submission deadline — only hashes are accepted.
+ * - reveal:    deadline passed, reveal window open — plaintext + salt accepted.
+ * - ready:     reveal window closed — owner can run AI judging.
+ * - judged:    AI review stored, owner can finalize.
+ * - finalized: reward paid out.
+ */
+export type BountyStatus =
+  | "commit"
+  | "reveal"
+  | "ready"
+  | "judged"
+  | "finalized";
 
-export function getBountyStatus(b: Bounty, nowSeconds = Date.now() / 1000): BountyStatus {
+export function getBountyStatus(
+  b: Bounty,
+  nowSeconds = Date.now() / 1000,
+): BountyStatus {
   if (b.finalized) return "finalized";
   if (b.judged) return "judged";
-  const deadlinePassed = Number(b.deadline) <= nowSeconds;
-  return deadlinePassed ? "ready" : "open";
+  if (Number(b.revealDeadline) <= nowSeconds) return "ready";
+  if (Number(b.deadline) <= nowSeconds) return "reveal";
+  return "commit";
 }
 
 export const STATUS_META: Record<
   BountyStatus,
   { label: string; tone: "green" | "amber" | "indigo" | "zinc" }
 > = {
-  open: { label: "Open", tone: "green" },
-  ready: { label: "Ready for judging", tone: "amber" },
+  commit: { label: "Commit phase", tone: "green" },
+  reveal: { label: "Reveal phase", tone: "amber" },
+  ready: { label: "Ready for judging", tone: "indigo" },
   judged: { label: "Judged", tone: "indigo" },
   finalized: { label: "Finalized", tone: "zinc" },
 };
 
-/** Can a participant still submit an answer? */
-export function canSubmit(b: Bounty, nowSeconds = Date.now() / 1000): boolean {
+/** Can a participant still commit a hashed answer? */
+export function canCommit(b: Bounty, nowSeconds = Date.now() / 1000): boolean {
   return !b.judged && !b.finalized && Number(b.deadline) > nowSeconds;
+}
+
+/** Is the reveal window currently open? */
+export function canReveal(b: Bounty, nowSeconds = Date.now() / 1000): boolean {
+  return (
+    !b.judged &&
+    !b.finalized &&
+    Number(b.deadline) <= nowSeconds &&
+    Number(b.revealDeadline) > nowSeconds
+  );
 }

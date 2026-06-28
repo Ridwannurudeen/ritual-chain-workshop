@@ -3,7 +3,12 @@
 import type { Bounty } from "@/lib/bounty";
 import { getBountyStatus, STATUS_META } from "@/lib/bounty";
 import { useNow } from "@/hooks/useNow";
-import { shortenAddress, formatReward, formatTimestamp, formatRelative } from "@/lib/format";
+import {
+  shortenAddress,
+  formatReward,
+  formatTimestamp,
+  formatRelative,
+} from "@/lib/format";
 import { Card, CardHeader, CardBody, Badge, Stat } from "@/components/ui";
 
 export function BountyDetail({
@@ -24,7 +29,9 @@ export function BountyDetail({
       <CardHeader
         title={
           <span className="flex items-center gap-2">
-            <span className="font-mono text-zinc-500">#{bountyId.toString()}</span>
+            <span className="font-mono text-zinc-500">
+              #{bountyId.toString()}
+            </span>
             <span className="normal-case text-base text-zinc-100">
               {bounty.title || "Untitled"}
             </span>
@@ -39,7 +46,9 @@ export function BountyDetail({
       />
       <CardBody className="space-y-4">
         <div>
-          <div className="text-[11px] uppercase tracking-wide text-zinc-500">Rubric</div>
+          <div className="text-[11px] uppercase tracking-wide text-zinc-500">
+            Rubric
+          </div>
           <p className="mt-1 whitespace-pre-wrap break-words text-sm text-zinc-200">
             {bounty.rubric || "-"}
           </p>
@@ -49,12 +58,23 @@ export function BountyDetail({
           <Stat label="Reward" value={formatReward(bounty.reward)} />
           <Stat label="Submissions" value={bounty.submissionCount.toString()} />
           <Stat
-            label="Deadline"
+            label="Commit deadline"
             value={
               <span>
                 {formatTimestamp(bounty.deadline)}
                 <span className="ml-1 text-xs text-zinc-500">
                   ({formatRelative(bounty.deadline)})
+                </span>
+              </span>
+            }
+          />
+          <Stat
+            label="Reveal deadline"
+            value={
+              <span>
+                {formatTimestamp(bounty.revealDeadline)}
+                <span className="ml-1 text-xs text-zinc-500">
+                  ({formatRelative(bounty.revealDeadline)})
                 </span>
               </span>
             }
@@ -65,7 +85,10 @@ export function BountyDetail({
         {bounty.finalized && (
           <div className="rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 ring-1 ring-inset ring-emerald-500/30">
             Finalized, winner is submission{" "}
-            <span className="font-mono font-semibold">#{bounty.winnerIndex.toString()}</span>.
+            <span className="font-mono font-semibold">
+              #{bounty.winnerIndex.toString()}
+            </span>
+            .
           </div>
         )}
       </CardBody>

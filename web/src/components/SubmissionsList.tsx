@@ -11,26 +11,39 @@ import { Card, CardHeader, CardBody, Badge } from "@/components/ui";
 export function SubmissionsList({
   bountyId,
   count,
+  committedCount,
   judge,
   finalWinner,
 }: {
   bountyId: bigint;
   count: number;
+  committedCount?: number;
   judge?: JudgeResult | null;
   finalWinner?: number;
 }) {
   const indices = Array.from({ length: count }, (_, i) => i);
+  const pending =
+    committedCount !== undefined ? Math.max(committedCount - count, 0) : 0;
 
   return (
     <Card>
       <CardHeader
-        title="Submissions"
-        subtitle="All submissions are judged together after the deadline."
-        action={<Badge tone="zinc">{count}</Badge>}
+        title="Revealed submissions"
+        subtitle="Answers stay hidden until each author reveals after the deadline."
+        action={
+          <Badge tone="zinc">
+            {count}
+            {pending > 0 ? ` · ${pending} hidden` : ""}
+          </Badge>
+        }
       />
       <CardBody className="space-y-3">
         {count === 0 ? (
-          <p className="text-sm text-zinc-500">No submissions yet.</p>
+          <p className="text-sm text-zinc-500">
+            {pending > 0
+              ? `${pending} answer(s) committed but not yet revealed.`
+              : "No submissions yet."}
+          </p>
         ) : (
           indices.map((i) => (
             <SubmissionRow
@@ -87,7 +100,11 @@ function SubmissionRow({
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs text-zinc-500">#{index}</span>
           <span className="font-mono text-sm text-zinc-300">
-            {submitter ? shortenAddress(submitter) : isLoading ? "loading…" : "-"}
+            {submitter
+              ? shortenAddress(submitter)
+              : isLoading
+                ? "loading…"
+                : "-"}
           </span>
         </div>
         <div className="flex items-center gap-1.5">

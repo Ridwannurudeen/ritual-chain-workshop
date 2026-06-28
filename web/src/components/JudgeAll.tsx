@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAccount, usePublicClient } from "wagmi";
+import { useNow } from "@/hooks/useNow";
 import aiJudgeAbi from "@/abi/AIJudge";
 import { contractAddress, executorAddress } from "@/config/contract";
 import { ritualChain } from "@/config/wagmi";
@@ -10,7 +11,15 @@ import { buildJudgeAllLlmInput, type JudgeSubmission } from "@/lib/ritualLlm";
 import { useWriteTx } from "@/hooks/useWriteTx";
 import { useRitualWalletStatus } from "@/hooks/useRitualWalletStatus";
 import { RitualWalletPanel } from "@/components/RitualWalletPanel";
-import { Card, CardHeader, CardBody, Button, TxStatus, Notice, Spinner } from "@/components/ui";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  Button,
+  TxStatus,
+  Notice,
+  Spinner,
+} from "@/components/ui";
 
 const explorerBase = ritualChain.blockExplorers?.default.url;
 
@@ -35,10 +44,19 @@ export function JudgeAll({
   // contract) — judgeAll spends prepaid+locked RITUAL via the LLM precompile.
   const walletStatus = useRitualWalletStatus(address);
 
+  const now = useNow();
   const count = Number(bounty.submissionCount);
+  const revealOver = Number(bounty.revealDeadline) <= now / 1000;
 
-  // Gate per spec: owner only, has submissions, not yet judged.
-  if (!isOwner || bounty.judged || bounty.finalized || count === 0) {
+  // Gate per spec: owner only, reveal phase over, has revealed submissions,
+  // not yet judged. The contract reverts judgeAll until the reveal deadline.
+  if (
+    !isOwner ||
+    bounty.judged ||
+    bounty.finalized ||
+    count === 0 ||
+    !revealOver
+  ) {
     return null;
   }
 
@@ -97,11 +115,20 @@ export function JudgeAll({
         subtitle="Sends one Ritual LLM request ranking every submission."
       />
       <CardBody className="space-y-3">
-        <Notice tone="indigo">AI review is advisory. The bounty owner finalizes the winner.</Notice>
+        <Notice tone="indigo">
+          AI review is advisory. The bounty owner finalizes the winner.
+        </Notice>
 
-        <RitualWalletPanel status={walletStatus} onDeposited={walletStatus.refetch} />
+        <RitualWalletPanel
+          status={walletStatus}
+          onDeposited={walletStatus.refetch}
+        />
 
-        <Button onClick={handleJudge} disabled={busy || !fundingReady} className="w-full">
+        <Button
+          onClick={handleJudge}
+          disabled={busy || !fundingReady}
+          className="w-full"
+        >
           {gathering ? (
             <>
               <Spinner /> Gathering {count} submissions…
@@ -115,7 +142,12 @@ export function JudgeAll({
           )}
         </Button>
         {gatherError && <Notice tone="red">{gatherError}</Notice>}
-        <TxStatus state={tx.state} error={tx.error} hash={tx.hash} explorerBase={explorerBase} />
+        <TxStatus
+          state={tx.state}
+          error={tx.error}
+          hash={tx.hash}
+          explorerBase={explorerBase}
+        />
       </CardBody>
     </Card>
   );

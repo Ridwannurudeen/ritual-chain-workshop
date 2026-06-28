@@ -6,7 +6,8 @@ import { useBounty } from "@/hooks/useBounty";
 import { isAddressEqual } from "@/lib/format";
 import { decodeAiReview } from "@/lib/aiReview";
 import { BountyDetail } from "@/components/BountyDetail";
-import { SubmitAnswer } from "@/components/SubmitAnswer";
+import { CommitAnswer } from "@/components/CommitAnswer";
+import { RevealAnswer } from "@/components/RevealAnswer";
 import { JudgeAll } from "@/components/JudgeAll";
 import { FinalizeWinner } from "@/components/FinalizeWinner";
 import { AIReviewDisplay } from "@/components/AIReviewDisplay";
@@ -36,8 +37,8 @@ export function BountyView({ bountyId }: { bountyId: bigint }) {
   if (isError || !bounty) {
     return (
       <Notice tone="red">
-        Couldn&apos;t load bounty #{bountyId.toString()}. Check the id and that the
-        contract address / RPC are configured correctly.
+        Couldn&apos;t load bounty #{bountyId.toString()}. Check the id and that
+        the contract address / RPC are configured correctly.
       </Notice>
     );
   }
@@ -59,11 +60,12 @@ export function BountyView({ bountyId }: { bountyId: bigint }) {
       {/* Left column: details + owner/participant actions */}
       <div className="space-y-4">
         <BountyDetail bountyId={bountyId} bounty={bounty} isOwner={isOwner} />
-        <SubmitAnswer
+        <CommitAnswer
           bountyId={bountyId}
           bounty={bounty}
-          onSubmitted={reload}
+          onCommitted={reload}
         />
+        <RevealAnswer bountyId={bountyId} bounty={bounty} onRevealed={reload} />
         <JudgeAll
           bountyId={bountyId}
           bounty={bounty}
@@ -84,6 +86,7 @@ export function BountyView({ bountyId }: { bountyId: bigint }) {
         <SubmissionsList
           bountyId={bountyId}
           count={Number(bounty.submissionCount)}
+          committedCount={Number(bounty.commitmentCount)}
           judge={judge}
           finalWinner={
             bounty.finalized ? Number(bounty.winnerIndex) : undefined

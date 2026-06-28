@@ -39,8 +39,12 @@ export default function Home() {
               AI
             </div>
             <div>
-              <h1 className="text-sm font-semibold leading-tight">AI Bounty Judge</h1>
-              <p className="text-[11px] leading-tight text-zinc-500">on {ritualChain.name}</p>
+              <h1 className="text-sm font-semibold leading-tight">
+                AI Bounty Judge
+              </h1>
+              <p className="text-[11px] leading-tight text-zinc-500">
+                on {ritualChain.name}
+              </p>
             </div>
           </div>
           <WalletConnect />
@@ -54,15 +58,16 @@ export default function Home() {
             Crowd-judged bounties, settled by AI.
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-            Submit answers to a bounty. After the deadline, Ritual AI ranks all submissions. The
-            bounty owner finalizes the winner.
+            Commit a hashed answer before the deadline, reveal it after, then
+            Ritual AI ranks every revealed submission. The bounty owner
+            finalizes the winner.
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-400">
             <span className="rounded-full bg-white/5 px-3 py-1 ring-1 ring-inset ring-white/10">
               AI review is advisory. The owner finalizes the winner.
             </span>
             <span className="rounded-full bg-white/5 px-3 py-1 ring-1 ring-inset ring-white/10">
-              All submissions are judged together after the deadline.
+              Answers stay hidden until reveal — no copying before the deadline.
             </span>
             <span className="rounded-full bg-white/5 px-3 py-1 ring-1 ring-inset ring-white/10">
               Only one winner receives the bounty reward.
@@ -73,10 +78,11 @@ export default function Home() {
         {!isContractConfigured && (
           <div className="mb-6">
             <Notice tone="amber">
-              No contract address configured. Copy <code className="font-mono">.env.example</code>{" "}
-              to <code className="font-mono">.env.local</code> and set{" "}
-              <code className="font-mono">NEXT_PUBLIC_CONTRACT_ADDRESS</code> to start interacting
-              on-chain.
+              No contract address configured. Copy{" "}
+              <code className="font-mono">.env.example</code> to{" "}
+              <code className="font-mono">.env.local</code> and set{" "}
+              <code className="font-mono">NEXT_PUBLIC_CONTRACT_ADDRESS</code> to
+              start interacting on-chain.
             </Notice>
           </div>
         )}
@@ -84,7 +90,11 @@ export default function Home() {
         {/* Dashboard: create + load */}
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <CreateBountyForm onCreated={handleCreated} />
-          <LoadBountyPanel selectedId={selectedId} onSelect={setSelectedId} recentIds={ids} />
+          <LoadBountyPanel
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            recentIds={ids}
+          />
         </section>
 
         {/* Selected bounty */}
@@ -97,8 +107,11 @@ export default function Home() {
         <footer className="mt-10 border-t border-white/10 pt-4 text-xs text-zinc-600">
           {contractAddress ? (
             <>
-              Contract <span className="font-mono">{shortenAddress(contractAddress, 6)}</span> ·
-              Chain {ritualChain.id}
+              Contract{" "}
+              <span className="font-mono">
+                {shortenAddress(contractAddress, 6)}
+              </span>{" "}
+              · Chain {ritualChain.id}
             </>
           ) : (
             <>Workshop demo · {ritualChain.name}</>
