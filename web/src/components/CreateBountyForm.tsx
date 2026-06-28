@@ -32,6 +32,9 @@ function localDateTime(msFromNow: number): string {
 }
 
 const HOUR_MS = 60 * 60 * 1000;
+/** Each phase must be at least this long so participants have time to act. */
+const MIN_WINDOW_MS = 5 * 60 * 1000;
+const MIN_WINDOW_LABEL = "5 minutes";
 
 export function CreateBountyForm({
   onCreated,
@@ -93,13 +96,18 @@ export function CreateBountyForm({
 
     const deadlineMs = new Date(deadline).getTime();
     const revealMs = new Date(revealDeadline).getTime();
-    if (deadlineMs <= Date.now()) {
-      // Clock read belongs in the event handler, not render.
-      window.alert("Deadline must be in the future.");
+    // Clock reads belong in the event handler, not render. Enforce a minimum
+    // window per phase so participants have time to commit and to reveal.
+    if (deadlineMs < Date.now() + MIN_WINDOW_MS) {
+      window.alert(
+        `The commit window must be at least ${MIN_WINDOW_LABEL} from now.`,
+      );
       return;
     }
-    if (revealMs <= deadlineMs) {
-      window.alert("Reveal deadline must be after the deadline.");
+    if (revealMs < deadlineMs + MIN_WINDOW_MS) {
+      window.alert(
+        `The reveal window must be at least ${MIN_WINDOW_LABEL} after the deadline.`,
+      );
       return;
     }
 
@@ -164,7 +172,7 @@ export function CreateBountyForm({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field
               label="Deadline"
-              hint="Commit phase ends; reveal phase begins."
+              hint="Commit phase ends; reveal phase begins. At least 5 min out."
             >
               <Input
                 type="datetime-local"
@@ -174,7 +182,7 @@ export function CreateBountyForm({
             </Field>
             <Field
               label="Reveal deadline"
-              hint="Reveal phase ends; judging can begin."
+              hint="Reveal phase ends; judging can begin. At least 5 min after deadline."
             >
               <Input
                 type="datetime-local"
