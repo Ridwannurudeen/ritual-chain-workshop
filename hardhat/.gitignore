@@ -10,6 +10,9 @@
 # Hardhat Build Artifacts
 /artifacts
 
+# Hardhat Ignition deployment state (regenerable, environment-specific)
+/ignition/deployments
+
 # Hardhat compilation (v2) support directory
 /cache
 

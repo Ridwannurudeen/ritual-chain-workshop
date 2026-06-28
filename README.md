@@ -1,5 +1,8 @@
 # Commit–Reveal AI Bounty Judge
 
+> **Live on Ritual testnet (chain 1979):** `AIJudge` at
+> `0x65AC3E1301E67d2B48B8F4b418BcfbBe359bd02D`
+
 A privacy-preserving bounty system on Ritual Chain. Participants compete to answer a
 bounty; an AI judge ranks every entry against the rubric; the owner finalizes a winner
 and the contract pays out.
