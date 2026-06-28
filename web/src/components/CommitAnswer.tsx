@@ -55,7 +55,7 @@ export function CommitAnswer({
   });
 
   // Commit window closed — nothing to show.
-  if (!canCommit(bounty, now / 1000)) return null;
+  if (!canCommit(bounty, now)) return null;
 
   const alreadyCommitted = !!existing && existing !== ZERO_BYTES32;
   const saved = address ? loadCommitment(bountyId, address) : null;

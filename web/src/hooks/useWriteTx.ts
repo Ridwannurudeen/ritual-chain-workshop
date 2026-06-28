@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import {
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  usePublicClient,
+} from "wagmi";
 import type { Abi, Address, TransactionReceipt } from "viem";
 
 /**
@@ -19,9 +23,13 @@ type WriteParams = {
   gas?: bigint;
   gasPrice?: bigint;
   maxFeePerGas?: bigint;
+  maxPriorityFeePerGas?: bigint;
+  type?: "legacy" | "eip1559";
 };
 
-type WagmiWriteParams = Parameters<ReturnType<typeof useWriteContract>["writeContractAsync"]>[0];
+type WagmiWriteParams = Parameters<
+  ReturnType<typeof useWriteContract>["writeContractAsync"]
+>[0];
 
 export type TxState =
   | "idle"
@@ -51,13 +59,17 @@ function describeError(err: unknown): string {
  * `run(params)` returns the tx hash (or throws). `onConfirmed(receipt)` fires
  * once when the receipt lands — handy for refetching reads or reading logs.
  */
-export function useWriteTx(onConfirmed?: (receipt: TransactionReceipt) => void) {
+export function useWriteTx(
+  onConfirmed?: (receipt: TransactionReceipt) => void,
+) {
   const {
     data: hash,
     reset: resetWrite,
     isPending: isWalletPending,
     mutateAsync: writeContractAsync,
   } = useWriteContract();
+
+  const publicClient = usePublicClient();
 
   const {
     data: receipt,
@@ -83,7 +95,8 @@ export function useWriteTx(onConfirmed?: (receipt: TransactionReceipt) => void) 
   }, [isConfirmed, receipt, onConfirmed]);
 
   const error =
-    submitError ?? (isReceiptError && receiptError ? describeError(receiptError) : null);
+    submitError ??
+    (isReceiptError && receiptError ? describeError(receiptError) : null);
 
   const state: TxState = error
     ? "failed"
@@ -101,7 +114,27 @@ export function useWriteTx(onConfirmed?: (receipt: TransactionReceipt) => void) 
       notifiedRef.current = false;
       setSubmitting(true);
       try {
-        return await writeContractAsync(params as WagmiWriteParams);
+        // Ritual Chain rejects legacy (type-0) transactions. Injected wallets
+        // on a manually-added network often default to legacy, so unless the
+        // caller already specified fees, hand the wallet explicit EIP-1559 fees
+        // to force a type-2 transaction.
+        let feeParams: Partial<WriteParams> = {};
+        if (
+          params.gasPrice === undefined &&
+          params.maxFeePerGas === undefined &&
+          publicClient
+        ) {
+          const fees = await publicClient.estimateFeesPerGas();
+          feeParams = {
+            type: "eip1559",
+            maxFeePerGas: fees.maxFeePerGas,
+            maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
+          };
+        }
+        return await writeContractAsync({
+          ...params,
+          ...feeParams,
+        } as WagmiWriteParams);
       } catch (e) {
         setSubmitError(describeError(e));
         throw e;
@@ -109,7 +142,7 @@ export function useWriteTx(onConfirmed?: (receipt: TransactionReceipt) => void) 
         setSubmitting(false);
       }
     },
-    [writeContractAsync],
+    [writeContractAsync, publicClient],
   );
 
   const reset = useCallback(() => {

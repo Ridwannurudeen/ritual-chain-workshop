@@ -103,8 +103,10 @@ export function CreateBountyForm({
       return;
     }
 
-    const deadlineTs = BigInt(Math.floor(deadlineMs / 1000));
-    const revealDeadlineTs = BigInt(Math.floor(revealMs / 1000));
+    // Ritual Chain's block.timestamp is in milliseconds, so deadlines are sent
+    // in milliseconds to match the contract's block.timestamp comparisons.
+    const deadlineTs = BigInt(deadlineMs);
+    const revealDeadlineTs = BigInt(revealMs);
     const value = reward.trim() === "" ? 0n : parseEther(reward.trim());
     setCreatedId(null);
 

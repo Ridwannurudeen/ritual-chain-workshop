@@ -1,26 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import {
-  useAccount,
-  useConnect,
-  useDisconnect,
-  useChainId,
-  useSwitchChain,
-} from "wagmi";
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import { ritualChain } from "@/config/wagmi";
 import { shortenAddress } from "@/lib/format";
 import { Button, Badge } from "@/components/ui";
 
 export function WalletConnect() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
-  const chainId = useChainId();
   const { switchChain } = useSwitchChain();
   const [open, setOpen] = useState(false);
 
-  const wrongChain = isConnected && chainId !== ritualChain.id;
+  // Compare the wallet's *actual* chain (from useAccount) against the target.
+  // useChainId() returns the configured chain (1979 only), so it never reflects
+  // a wallet sitting on the wrong network.
+  const wrongChain =
+    isConnected && chainId !== undefined && chainId !== ritualChain.id;
 
   if (isConnected && address) {
     return (

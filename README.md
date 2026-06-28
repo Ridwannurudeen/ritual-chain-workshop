@@ -101,6 +101,20 @@ without the IR pipeline.
 > Chain. Local Solidity tests exercise it through a mocked precompile (`vm.mockCall`); the
 > live inference path is verified on Ritual testnet. See `docs/TEST_PLAN.md`.
 
+## Running on Ritual Chain — quirks the frontend handles
+
+Ritual Chain differs from a stock EVM in three ways that affect the dapp (all handled in `web/`):
+
+- **EIP-1559 only.** Ritual rejects legacy (type-0) transactions. The frontend forces type-2
+  by handing the wallet explicit fees (`useWriteTx`). Wallets that always send legacy for
+  custom networks (e.g. Rabby on an unrecognised chain) won't work — use a wallet that sends
+  type-2, such as MetaMask.
+- **`block.timestamp` is in milliseconds**, not seconds. All deadlines are sent and compared
+  in milliseconds (`CreateBountyForm`, `lib/bounty.ts`, `lib/format.ts`).
+- **LLM judging is metered.** `judgeAll` spends from the caller's prepaid, locked
+  `RitualWallet`; a single batch judging call costs ~0.3 RITUAL on testnet, so the deposit
+  defaults are sized with headroom (`lib/ritualWallet.ts`).
+
 ## Docs
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — data-flow, what's on-chain vs off-chain,

@@ -58,7 +58,7 @@ export function RevealAnswer({
   });
 
   // Only relevant during the reveal window.
-  if (!canReveal(bounty, now / 1000)) return null;
+  if (!canReveal(bounty, now)) return null;
 
   const hasCommitment = !!existing && existing !== ZERO_BYTES32;
   const saltValid = /^0x[0-9a-fA-F]{64}$/.test(salt.trim());

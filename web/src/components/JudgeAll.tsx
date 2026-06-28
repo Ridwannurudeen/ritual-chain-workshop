@@ -46,7 +46,7 @@ export function JudgeAll({
 
   const now = useNow();
   const count = Number(bounty.submissionCount);
-  const revealOver = Number(bounty.revealDeadline) <= now / 1000;
+  const revealOver = Number(bounty.revealDeadline) <= now;
 
   // Gate per spec: owner only, reveal phase over, has revealed submissions,
   // not yet judged. The contract reverts judgeAll until the reveal deadline.

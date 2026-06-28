@@ -78,14 +78,13 @@ export type BountyStatus =
   | "judged"
   | "finalized";
 
-export function getBountyStatus(
-  b: Bounty,
-  nowSeconds = Date.now() / 1000,
-): BountyStatus {
+// Ritual Chain reports block.timestamp in milliseconds, so on-chain deadlines
+// are milliseconds too — compare them against Date.now() (also milliseconds).
+export function getBountyStatus(b: Bounty, nowMs = Date.now()): BountyStatus {
   if (b.finalized) return "finalized";
   if (b.judged) return "judged";
-  if (Number(b.revealDeadline) <= nowSeconds) return "ready";
-  if (Number(b.deadline) <= nowSeconds) return "reveal";
+  if (Number(b.revealDeadline) <= nowMs) return "ready";
+  if (Number(b.deadline) <= nowMs) return "reveal";
   return "commit";
 }
 
@@ -101,16 +100,16 @@ export const STATUS_META: Record<
 };
 
 /** Can a participant still commit a hashed answer? */
-export function canCommit(b: Bounty, nowSeconds = Date.now() / 1000): boolean {
-  return !b.judged && !b.finalized && Number(b.deadline) > nowSeconds;
+export function canCommit(b: Bounty, nowMs = Date.now()): boolean {
+  return !b.judged && !b.finalized && Number(b.deadline) > nowMs;
 }
 
 /** Is the reveal window currently open? */
-export function canReveal(b: Bounty, nowSeconds = Date.now() / 1000): boolean {
+export function canReveal(b: Bounty, nowMs = Date.now()): boolean {
   return (
     !b.judged &&
     !b.finalized &&
-    Number(b.deadline) <= nowSeconds &&
-    Number(b.revealDeadline) > nowSeconds
+    Number(b.deadline) <= nowMs &&
+    Number(b.revealDeadline) > nowMs
   );
 }
