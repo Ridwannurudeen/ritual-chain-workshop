@@ -38,7 +38,7 @@ contract AIJudgeTest is Test {
         bytes32 salt,
         address who
     ) internal view returns (bytes32) {
-        return keccak256(abi.encode(answer, salt, who, bountyId));
+        return keccak256(abi.encodePacked(answer, salt, who, bountyId));
     }
 
     function _commit(address who, string memory answer, bytes32 salt) internal {
@@ -164,23 +164,15 @@ contract AIJudgeTest is Test {
         judge.revealAnswer(bountyId, long, salt);
     }
 
-    function test_RecommitOverwritesAndOnlyLatestReveals() public {
-        bytes32 saltA = keccak256("A");
-        bytes32 saltB = keccak256("B");
-        _commit(alice, "first", saltA);
-        _commit(alice, "second", saltB); // overwrite, same slot
+    function test_SecondCommitmentReverts() public {
+        // Spec: one commitment per participant per bounty.
+        _commit(alice, "first", keccak256("A"));
+        vm.prank(alice);
+        vm.expectRevert("already committed");
+        judge.submitCommitment(bountyId, keccak256("second"));
 
         (, , , , , , , , , uint256 commitCount, , ) = judge.getBounty(bountyId);
-        assertEq(commitCount, 1, "re-commit does not consume a new slot");
-
-        vm.warp(deadline);
-        vm.prank(alice);
-        vm.expectRevert("commitment mismatch");
-        judge.revealAnswer(bountyId, "first", saltA); // old answer no longer valid
-
-        _reveal(alice, "second", saltB);
-        (, string memory answer) = judge.getSubmission(bountyId, 0);
-        assertEq(answer, "second");
+        assertEq(commitCount, 1, "still one commitment");
     }
 
     // ---- commit failure cases --------------------------------------------

@@ -114,7 +114,8 @@ contract AIJudge is PrecompileConsumer {
 
     /// Commit phase: store only a hash. The plaintext answer never touches the
     /// chain here, so nobody can read and copy it before the deadline.
-    /// commitment = keccak256(abi.encode(answer, salt, msg.sender, bountyId)).
+    /// commitment = keccak256(abi.encodePacked(answer, salt, msg.sender, bountyId)).
+    /// One commitment per participant per bounty.
     function submitCommitment(
         uint256 bountyId,
         bytes32 commitment
@@ -123,17 +124,16 @@ contract AIJudge is PrecompileConsumer {
 
         require(block.timestamp < bounty.deadline, "commit phase over");
         require(commitment != bytes32(0), "empty commitment");
+        require(
+            commitmentOf[bountyId][msg.sender] == bytes32(0),
+            "already committed"
+        );
+        require(
+            bounty.commitmentCount < MAX_SUBMISSIONS,
+            "too many submissions"
+        );
 
-        // Count each participant once; re-committing before the deadline is
-        // allowed and overwrites the previous hash without consuming a slot.
-        if (commitmentOf[bountyId][msg.sender] == bytes32(0)) {
-            require(
-                bounty.commitmentCount < MAX_SUBMISSIONS,
-                "too many submissions"
-            );
-            bounty.commitmentCount++;
-        }
-
+        bounty.commitmentCount++;
         commitmentOf[bountyId][msg.sender] = commitment;
 
         emit CommitmentSubmitted(bountyId, msg.sender, commitment);
@@ -156,7 +156,7 @@ contract AIJudge is PrecompileConsumer {
         bytes32 commitment = commitmentOf[bountyId][msg.sender];
         require(commitment != bytes32(0), "nothing to reveal");
         require(
-            keccak256(abi.encode(answer, salt, msg.sender, bountyId)) ==
+            keccak256(abi.encodePacked(answer, salt, msg.sender, bountyId)) ==
                 commitment,
             "commitment mismatch"
         );

@@ -21,7 +21,7 @@ precompile with `vm.mockCall` (it has no code off Ritual Chain).
 | 6 | Reveal after the reveal deadline | revert `reveal phase over` | `test_RevealAfterRevealDeadlineReverts` |
 | 7 | Reveal the same commitment twice | second reverts `nothing to reveal` | `test_DoubleRevealReverts` |
 | 8 | Reveal an answer longer than `MAX_ANSWER_LENGTH` | revert `answer too long` | `test_RevealTooLongAnswerReverts` |
-| 9 | Re-commit before deadline, then reveal | only the latest (answer, salt) reveals; slot not double-counted | `test_RecommitOverwritesAndOnlyLatestReveals` |
+| 9 | A second commitment from the same address | revert `already committed` (one commitment per bounty) | `test_SecondCommitmentReverts` |
 
 ## Commit cases
 

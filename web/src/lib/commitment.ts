@@ -1,16 +1,9 @@
-import {
-  keccak256,
-  encodeAbiParameters,
-  parseAbiParameters,
-  toHex,
-  zeroHash,
-  type Address,
-} from "viem";
+import { keccak256, encodePacked, toHex, zeroHash, type Address } from "viem";
 
 /**
  * Commit-reveal helpers.
  *
- * The on-chain commitment is `keccak256(abi.encode(answer, salt, sender, bountyId))`
+ * The on-chain commitment is `keccak256(abi.encodePacked(answer, salt, sender, bountyId))`
  * — the exact scheme `AIJudge.revealAnswer` re-derives and checks. Binding the
  * hash to the sender and bounty means a commitment copied from the mempool is
  * useless to anyone else.
@@ -33,8 +26,8 @@ export function computeCommitment(
   bountyId: bigint,
 ): `0x${string}` {
   return keccak256(
-    encodeAbiParameters(
-      parseAbiParameters("string, bytes32, address, uint256"),
+    encodePacked(
+      ["string", "bytes32", "address", "uint256"],
       [answer, salt, account, bountyId],
     ),
   );

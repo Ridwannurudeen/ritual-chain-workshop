@@ -31,8 +31,8 @@ they can no longer influence anyone else's entry.
    reward is locked in the contract. `deadline` ends the commit phase; `revealDeadline`
    ends the reveal phase. The contract requires `revealDeadline > deadline > now`.
 2. **Commit** (`now < deadline`) — `submitCommitment(bountyId, commitment)`. Only the
-   hash is stored. Re-committing before the deadline overwrites the previous hash without
-   consuming a new slot. Capped at `MAX_SUBMISSIONS` (10) distinct addresses.
+   hash is stored. One commitment per participant per bounty (a second
+   `submitCommitment` reverts). Capped at `MAX_SUBMISSIONS` (10) distinct addresses.
 3. **Reveal** (`deadline ≤ now < revealDeadline`) — `revealAnswer(bountyId, answer, salt)`.
    The contract recomputes the commitment and stores the plaintext only if it matches.
    Each commitment can be revealed once.
@@ -45,7 +45,7 @@ they can no longer influence anyone else's entry.
 ## The commitment scheme
 
 ```
-commitment = keccak256(abi.encode(answer, salt, msg.sender, bountyId))
+commitment = keccak256(abi.encodePacked(answer, salt, msg.sender, bountyId))
 ```
 
 Three properties make this safe:
@@ -60,7 +60,7 @@ Three properties make this safe:
 `salt` is 32 random bytes the participant must keep. The frontend generates it, stores
 `(answer, salt)` in `localStorage`, and replays it at reveal time; if storage is lost the
 participant can paste both by hand. The matching client encoding is
-`keccak256(encodeAbiParameters(parseAbiParameters("string, bytes32, address, uint256"), [answer, salt, account, bountyId]))`
+`keccak256(encodePacked(["string", "bytes32", "address", "uint256"], [answer, salt, account, bountyId]))`
 (see `web/src/lib/commitment.ts`).
 
 ## Functions

@@ -15,7 +15,7 @@ Two designs are described here:
 
 | Stage | Plaintext answer lives… |
 | --- | --- |
-| Commit | **Off-chain only** — in the participant's browser (`localStorage`) alongside the salt. On-chain there is only `keccak256(abi.encode(answer, salt, sender, bountyId))`. |
+| Commit | **Off-chain only** — in the participant's browser (`localStorage`) alongside the salt. On-chain there is only `keccak256(abi.encodePacked(answer, salt, sender, bountyId))`. |
 | Reveal | **On-chain, public** — `revealAnswer` writes the answer into `Bounty.submissions[]`. By now the commit window is closed, so publishing it can no longer help a copier. |
 | Judge | Read from on-chain storage, assembled into one LLM prompt. |
 
@@ -101,8 +101,53 @@ TEE-backed LLM precompile.
    decrypts every answer **inside the enclave**, concatenates them into one batched prompt
    (the same single-inference shape as the required track), runs the model once, and
    signs the ranking.
-4. Only the verdict (`{ winnerIndex, summary }`) is returned and stored on-chain. The
-   plaintext answers and keys never leave the enclave.
+4. Only the verdict is returned and stored on-chain. The plaintext answers and keys never
+   leave the enclave.
+
+### The final reveal and how the contract commits to it
+
+To avoid storing every plaintext answer on-chain (gas), the TEE publishes a **revealed
+answers bundle off-chain** (e.g. IPFS) and the contract stores only a reference and a hash
+of that bundle. The judging result the TEE signs therefore carries both the ranking and the
+bundle commitment:
+
+```json
+{
+  "winnerIndex": 2,
+  "ranking": [{ "index": 2, "score": 94, "reason": "Best satisfies the rubric." }],
+  "revealedAnswersRef": "ipfs://… or storage-ref://…",
+  "revealedAnswersHash": "0x…",
+  "summary": "Submission 2 is the strongest answer."
+}
+```
+
+`finalizeWinner` (or a `revealBundle` step) records `revealedAnswersRef` and
+`revealedAnswersHash` on-chain. Anyone can later fetch the bundle, recompute its hash, and
+confirm it matches what the contract stored — so the public can audit that the answers the
+AI judged are exactly the ones revealed, without those answers ever being public *before*
+judging. The TEE's attestation signature is what authorizes the verdict; the hash is what
+binds the off-chain bundle to it. Large plaintext stays off-chain; only a 32-byte hash and a
+short URI live on-chain.
+
+### Private submission flow (diagram)
+
+```
+ participant            chain (public)             Ritual TEE executor
+ ───────────            ──────────────             ───────────────────
+ encrypt answer ─ciphertext+wrappedKey─▶ store (encrypted only)
+                                          │
+                        (revealDeadline)  │
+ owner: judgeAll(llmInput) ──────────────▶│
+                                          ├── unwrap keys (DKMS 0x081B), decrypt in enclave
+                                          ├── batch ALL answers → one LLM inference
+                                          ├── sign { ranking, winner, bundleRef, bundleHash }
+                                          ▼
+            store verdict + revealedAnswersHash/Ref ◀──── attested result
+ owner: finalizeWinner(index) ─▶ pay winner   (human-in-the-loop)
+```
+
+No participant, the owner, or a chain observer can read any answer until the enclave
+decrypts it at judging time; afterward only the winner-plus-bundle reference is published.
 
 ### Trade-offs vs commit–reveal
 

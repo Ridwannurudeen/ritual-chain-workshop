@@ -94,49 +94,45 @@ export function CommitAnswer({
       <CardBody>
         {alreadyCommitted ? (
           <Notice tone="green">
-            You&apos;ve committed to this bounty.{" "}
+            You&apos;ve committed to this bounty — one commitment per bounty, so
+            this is locked in.{" "}
             {saved
-              ? "Your answer and salt are saved in this browser — come back after the deadline to reveal."
-              : "Keep your answer and salt safe; you'll need them to reveal after the deadline."}{" "}
-            Committing again overwrites your previous entry.
+              ? "Your answer and salt are saved in this browser; come back after the deadline to reveal."
+              : "Keep your answer and salt safe — you'll need them to reveal after the deadline."}
           </Notice>
-        ) : null}
-
-        <form onSubmit={handleCommit} className="mt-3 space-y-3">
-          <Field
-            label="Your answer"
-            hint="Stored only as a hash on-chain. Saved locally so you can reveal later."
-          >
-            <Textarea
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              rows={5}
-              placeholder="Write your submission…"
+        ) : (
+          <form onSubmit={handleCommit} className="space-y-3">
+            <Field
+              label="Your answer"
+              hint="Stored only as a hash on-chain. Saved locally so you can reveal later."
+            >
+              <Textarea
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                rows={5}
+                placeholder="Write your submission…"
+              />
+            </Field>
+            <Button
+              type="submit"
+              disabled={!isConnected || !answer.trim() || tx.isBusy}
+              className="w-full"
+            >
+              {tx.isBusy ? "Committing…" : "Commit answer"}
+            </Button>
+            {!isConnected && (
+              <p className="text-xs text-zinc-500">
+                Connect your wallet to commit.
+              </p>
+            )}
+            <TxStatus
+              state={tx.state}
+              error={tx.error}
+              hash={tx.hash}
+              explorerBase={explorerBase}
             />
-          </Field>
-          <Button
-            type="submit"
-            disabled={!isConnected || !answer.trim() || tx.isBusy}
-            className="w-full"
-          >
-            {tx.isBusy
-              ? "Committing…"
-              : alreadyCommitted
-                ? "Re-commit (overwrite)"
-                : "Commit answer"}
-          </Button>
-          {!isConnected && (
-            <p className="text-xs text-zinc-500">
-              Connect your wallet to commit.
-            </p>
-          )}
-          <TxStatus
-            state={tx.state}
-            error={tx.error}
-            hash={tx.hash}
-            explorerBase={explorerBase}
-          />
-        </form>
+          </form>
+        )}
       </CardBody>
     </Card>
   );
